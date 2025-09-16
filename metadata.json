@@ -1,0 +1,5 @@
+{
+  "name": "Crypto Strategy AI Trader",
+  "description": "An AI-powered crypto trading assistant that provides real-time price data and generates trading strategies using Google's Gemini API. It visualizes market trends and offers actionable insights for cryptocurrencies like BTC and ETH.",
+  "requestFramePermissions": []
+}
