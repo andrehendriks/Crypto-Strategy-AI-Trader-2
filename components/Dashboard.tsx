@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CryptoPair, HistoricalDataPoint, PriceUpdate } from '../types';
 import PriceChart from './PriceChart';
 import RealtimePrice from './RealtimePrice';
@@ -9,42 +8,42 @@ import { MOCK_HISTORICAL_DATA, subscribeToPriceUpdates, unsubscribeFromPriceUpda
 const Dashboard: React.FC = () => {
   const [selectedPair, setSelectedPair] = useState<CryptoPair>(CryptoPair.BTC_USD);
   const [realtimePrices, setRealtimePrices] = useState<Record<CryptoPair, number | null>>({
-    [CryptoPair.BTC_USD]: null,
-    [CryptoPair.ETH_USD]: null,
+    [CryptoPair.BTC_USD]: MOCK_HISTORICAL_DATA[CryptoPair.BTC_USD].slice(-1)[0].price,
+    [CryptoPair.ETH_USD]: MOCK_HISTORICAL_DATA[CryptoPair.ETH_USD].slice(-1)[0].price,
   });
 
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>(MOCK_HISTORICAL_DATA[selectedPair]);
 
   useEffect(() => {
     setHistoricalData(MOCK_HISTORICAL_DATA[selectedPair]);
-    setRealtimePrices(prev => ({ ...prev, [selectedPair]: MOCK_HISTORICAL_DATA[selectedPair].slice(-1)[0].price }));
+    // No need to set realtime price here as it's initialized and updated by websocket
   }, [selectedPair]);
 
+  const handlePriceUpdate = useCallback((update: PriceUpdate) => {
+    setRealtimePrices(prevPrices => ({
+      ...prevPrices,
+      [update.pair]: update.price,
+    }));
+
+    if (update.pair === selectedPair) {
+      setHistoricalData(prevData => {
+        const newDataPoint = {
+          time: new Date().toISOString().slice(11, 16),
+          price: update.price
+        };
+        const updatedData = [...prevData.slice(1), newDataPoint];
+        return updatedData;
+      });
+    }
+  }, [selectedPair]);
+
+
   useEffect(() => {
-    const handlePriceUpdate = (update: PriceUpdate) => {
-      setRealtimePrices(prevPrices => ({
-        ...prevPrices,
-        [update.pair]: update.price,
-      }));
-       if(update.pair === selectedPair){
-         setHistoricalData(prevData => {
-            const newDataPoint = {
-                time: new Date().toISOString().slice(11, 16),
-                price: update.price
-            };
-            const updatedData = [...prevData.slice(1), newDataPoint];
-            return updatedData;
-         });
-       }
-    };
-
     subscribeToPriceUpdates(handlePriceUpdate);
-
     return () => {
       unsubscribeFromPriceUpdates();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPair]);
+  }, [handlePriceUpdate]);
 
   const currentPrice = realtimePrices[selectedPair] ?? historicalData.slice(-1)[0]?.price ?? 0;
 
@@ -55,7 +54,7 @@ const Dashboard: React.FC = () => {
           <button
             key={key}
             onClick={() => setSelectedPair(CryptoPair[key])}
-            className={`w-full py-2 px-4 text-sm font-semibold rounded-md transition-colors duration-300 focus:outline-none ${
+            className={`w-full py-2 px-4 text-sm font-semibold rounded-md transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
               selectedPair === CryptoPair[key]
                 ? 'bg-blue-600 text-white shadow'
                 : 'bg-transparent text-gray-400 hover:bg-gray-700'

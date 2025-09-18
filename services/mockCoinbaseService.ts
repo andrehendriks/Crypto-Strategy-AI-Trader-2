@@ -14,14 +14,27 @@ const REVERSE_PAIR_MAP: Record<string, CryptoPair> = {
 // The real-time data below is live from a public data feed.
 const generateMockHistoricalData = (pair: CryptoPair, points = 100): HistoricalDataPoint[] => {
   const data: HistoricalDataPoint[] = [];
-  let price = pair === CryptoPair.BTC_USD ? 68000 : 3800; // Use more realistic starting prices
+  let price = pair === CryptoPair.BTC_USD ? 68000 : 3800;
+  const volatility = pair === CryptoPair.BTC_USD ? 0.025 : 0.035; // BTC is slightly less volatile here
+  let trend = (Math.random() - 0.5) * 0.1; // Initial trend direction
+
   const now = new Date();
 
   for (let i = points; i > 0; i--) {
     const time = new Date(now.getTime() - i * 60 * 60 * 1000); // Hourly data
-    const change = (Math.random() - 0.49) * (price * 0.02); // up to 2% change per hour
-    price += change;
-    price = Math.max(price, 0); // Price can't be negative
+
+    // Simulate price movement with trend and volatility
+    const randomFactor = (Math.random() - 0.5) * 2; // -1 to 1
+    const changePercent = trend + randomFactor * volatility;
+    price *= (1 + changePercent);
+    price = Math.max(price, 0);
+
+    // Slowly change the trend over time to simulate market shifts
+    trend += (Math.random() - 0.5) * 0.01;
+    if (trend > 0.05) trend = 0.05;
+    if (trend < -0.05) trend = -0.05;
+
+
     data.push({
       time: time.toISOString().slice(11, 16), // Format as HH:MM
       price: parseFloat(price.toFixed(2)),

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { CryptoPair, HistoricalDataPoint } from '../types';
@@ -15,12 +14,17 @@ const PriceChart: React.FC<PriceChartProps> = ({ data, pair }) => {
   }
 
   const chartColor = pair === CryptoPair.BTC_USD ? '#F7931A' : '#627EEA';
+
   const formatYAxis = (tickItem: number) => {
     if (tickItem >= 1000) {
       return (tickItem / 1000).toFixed(1) + 'k';
     }
     return tickItem.toString();
   };
+  
+  const minPrice = Math.min(...data.map(p => p.price));
+  const maxPrice = Math.max(...data.map(p => p.price));
+  const priceBuffer = (maxPrice - minPrice) * 0.1; // 10% buffer
 
   return (
     <Card title={`${pair} Price Chart (Hourly)`} className="h-[480px]">
@@ -54,7 +58,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ data, pair }) => {
             stroke="#A0AEC0" 
             tick={{ fontSize: 12 }} 
             tickFormatter={formatYAxis}
-            domain={['dataMin - 100', 'dataMax + 100']}
+            domain={[minPrice - priceBuffer, maxPrice + priceBuffer]}
             />
           <Tooltip 
             contentStyle={{ 
